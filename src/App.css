@@ -15,6 +15,7 @@ body, .app {
   background: #2e7c31;
   text-align: center;
 }
+
 .list-books-title h1 {
   font-weight: 400;
   margin: 0;
@@ -29,7 +30,6 @@ body, .app {
 .bookshelf {
   padding: 0 10px 20px;
 }
-
 @media (min-width: 600px) {
   .bookshelf {
     padding: 0 20px 40px;
@@ -164,9 +164,13 @@ body, .app {
 /* book cover */
 
 .book-cover {
-  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
   background: #eee;
+  width: 128px;
+  height: 165px;
+  background-size: cover;
 }
+
 .book-cover-title {
   padding: 20px 10px 0;
   text-align: center;
