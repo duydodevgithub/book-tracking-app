@@ -1,109 +1,113 @@
-import React from 'react'
-import * as BooksAPI from './BooksAPI'
-import './App.css'
-import { Link } from "react-router-dom"
-import { Route } from "react-router-dom"
+import React from "react";
+import { Link, Route } from "react-router-dom";
+import * as BooksAPI from "./BooksAPI";
 import Shelf from "./Shelf";
 import Search from "./Search";
+import "./App.css";
 
 
 class BooksApp extends React.Component {
-  state = {
-    books: [],
-    searchBooks: [],
-  }
+    MAX_RESULTS = 30;
 
-  componentDidMount() {
-    this.fetchBooks();
-  }
+    state = {
+        books: [],
+        searchBooks: []
+    };
 
-  fetchBooks() {
-    BooksAPI.getAll().then((books) => {
-      this.setState({books});
-    })
-  }
+    componentDidMount() {
+        this.fetchBooks();
+    }
 
-  getShelfBooks(shelfName){
-    return this.state.books.filter((b) => b.shelf === shelfName)
-  }
+    fetchBooks() {
+        BooksAPI.getAll().then((books) => {
+            this.setState({books});
+        });
+    }
 
-  changeShelf(book, newShelf) {
-    BooksAPI.update(book, newShelf).then(() => {
-      book.shelf = newShelf;
-      this.setState(state => ({
-          books: state.books.filter(b => b.id !== book.id).concat([ book ])
-      }));
-  });
-  }
+    getShelfBooks(shelfName){
+        return this.state.books.filter((b) => b.shelf === shelfName)
+    }
 
-  render() {
-    return (
-      <div className="app">
-      {/*listen to route /search */}
-          <Route
-            path="/search"
-            render={() => (
-              <div className="search-books">
-              <div className="search-books-bar">
-              <Link  to="/" className="close-search">Close</Link>
-              <div className="search-books-input-wrapper">
-                <input type="text" placeholder="Search by title or author"/>
+    changeShelf = (book, newShelf) => {
+        BooksAPI.update(book, newShelf).then(() => {
+            // Update the local copy of the book
+            book.shelf = newShelf;
 
-              </div>
+            // Filter out the book and append it to the end of the list
+            // so it appears at the end of whatever shelf it was added to.
+            this.setState(state => ({
+                books: state.books.filter(b => b.id !== book.id).concat([ book ])
+            }));
+        });
+    };
+
+    updateQuery = (query) => {
+        if(query){
+            BooksAPI.search(query, this.MAX_RESULTS).then((books) => {
+                // if the BookAPI.search worked properly, this would be unnecessary
+                if(books.length){
+                    books.forEach((book, index) => {
+                        let myBook = this.state.books.find((b) => b.id === book.id);
+                        book.shelf = myBook ? myBook.shelf : 'none';
+                        books[index] = book;
+                    });
+
+                    this.setState({
+                        searchBooks: books
+                    });
+                }
+
+            });
+            } else {
+            this.setState({
+                searchBooks: []
+            });
+        }
+    };
+
+    render() {
+        return (
+            <div className="app">
+                <Route exact path="/" render={() => (
+                    <div className="list-books">
+                        <div className="list-books-title">
+                            <h1>MyReads</h1>
+                        </div>
+                        <div className="list-books-content">
+                            <div>
+                                <Shelf
+                                    title="Currently Reading"
+                                    books={this.getShelfBooks("currentlyReading")}
+                                    changeShelf={this.changeShelf}
+                                />
+                                <Shelf
+                                    title="Want to Read"
+                                    books={this.getShelfBooks("wantToRead")}
+                                    changeShelf={this.changeShelf}
+                                />
+                                <Shelf
+                                    title="Read"
+                                    books={this.getShelfBooks("read")}
+                                    changeShelf={this.changeShelf}
+                                />
+                            </div>
+                        </div>
+                        <div className="open-search">
+                            <Link to="/search">Add a book</Link>
+                        </div>
+                    </div>
+                )}/>
+
+                <Route path="/search" render={({ history }) => (
+                    <Search
+                        books={this.state.searchBooks}
+                        updateQuery={this.updateQuery}
+                        changeShelf={this.changeShelf}
+                    />
+                )}/>
             </div>
-            <div className="search-books-results">
-              <ol className="books-grid"></ol>
-            </div>
-          </div>
-            )}
-          />
-      {/*listen to route / */}
-          <Route exact path="/" render={() => 
-            (
-              <div className="list-books">
-                <div className="list-books-title">
-                  <h1>MyReads</h1>
-                </div>
-
-                <div className="list-books-content">
-                {/*contains shelf compnent */}
-                  <div>
-                  <Shelf
-                    title="Currently Reading"
-                    books={this.getShelfBooks("currentlyReading")}
-                    changeShelf={this.changeShelf}
-                  />
-                  <Shelf
-                    title="Want To Read"
-                    books={this.getShelfBooks("wantToRead")}
-                    changeShelf={this.changeShelf}
-                  />
-                  <Shelf
-                    title="Read"
-                    books={this.getShelfBooks("read")}
-                    changeShelf={this.changeShelf}
-                  />
-                  </div>
-                </div>
-
-                <div className="open-search">
-                  <Link
-                    to="/search"
-                  >Add a book</Link>
-                </div>
-              </div>
-            )
-          } />
-          <Route path="/search" render={({ history }) => (
-            <Search
-                books={this.state.searchBooks}
-                updateQuery={this.updateQuery}
-                changeShelf={this.changeShelf}
-            />
-        )}/>
-      </div>
-    )
-  }
+        )
+    }
 }
 
 export default BooksApp
